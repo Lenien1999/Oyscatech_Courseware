@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart'; // Added for launching the URL
 import 'package:ucris_oyscatech/constant/style.dart';
 import 'package:ucris_oyscatech/widget/title_text.dart';
 
@@ -37,17 +39,27 @@ class CourseDetails extends StatelessWidget {
             const Center(child: TitleText(title: 'Course Material')),
             _buildCourseDetails(),
             const SizedBox(height: 30),
-            _buildResourceSection('Download Lecture Notes'),
+
+            // Lecture Notes Section (from Firebase)
+            const TitleText(title: 'Lecture Notes'),
+            _buildFirebaseResourceList('Lecture Notes'),
             const Divider(),
-            _buildResourceSection('Download Assignment'),
+
+            // Assignments Section (from Firebase)
+            const TitleText(title: 'Assignments'),
+            _buildFirebaseResourceList('Assignments'),
             const Divider(),
-            _buildResourceSection('Download Past Questions'),
+
+            // Past Questions Section (from Firebase)
+            const TitleText(title: 'Past Questions'),
+            _buildFirebaseResourceList('Past Question'),
           ],
         ),
       ),
     );
   }
 
+  // Function to build the course details section
   Widget _buildCourseDetails() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,6 +93,7 @@ class CourseDetails extends StatelessWidget {
     );
   }
 
+  // Function to build the rich text for course details
   Widget _buildRichText(String label, String value) {
     return RichText(
       text: TextSpan(
@@ -105,7 +118,43 @@ class CourseDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildResourceSection(String title) {
+  // Fetch resource files from Firebase and display them dynamically
+  Widget _buildFirebaseResourceList(String resourceType) {
+    return
+     StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('course_materials')
+          .where('course', isEqualTo: courseCode)
+          .where('type', isEqualTo: resourceType)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+              child: SizedBox(width: 30, child: CircularProgressIndicator()));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Text('No files uploaded for this section.');
+        }
+
+        var materials = snapshot.data!.docs;
+
+        return Column(
+          children: materials.map((material) {
+            String? fileUrl = material['downloadUrl'];
+            String fileName = material['fileName'] ?? 'No file uploaded';
+
+            return _buildResourceSection(fileName, fileUrl);
+          }).toList(),
+        );
+      },
+    );
+  
+  
+  }
+
+  // Function to build the resource section with a download button
+  Widget _buildResourceSection(String title, String? fileUrl) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Row(
@@ -121,20 +170,31 @@ class CourseDetails extends StatelessWidget {
             ),
           ),
           ElevatedButton.icon(
-            onPressed: () {
-              // Implement your download logic here
-            },
+            onPressed: fileUrl != null
+                ? () {
+                    _downloadFile(fileUrl);
+                  }
+                : null,
             icon: const Icon(Icons.download, color: Colors.white),
             label: const Text(
               'Download',
               style: TextStyle(color: Colors.white),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: appColor,
+              backgroundColor: fileUrl != null ? appColor : Colors.grey,
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Function to download the file
+  Future<void> _downloadFile(String fileUrl) async {
+    if (await canLaunch(fileUrl)) {
+      await launch(fileUrl);
+    } else {
+      throw 'Could not launch $fileUrl';
+    }
   }
 }

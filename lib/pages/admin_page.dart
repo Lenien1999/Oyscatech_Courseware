@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:ucris_oyscatech/components/courses.dart';
 import 'package:ucris_oyscatech/constant/style.dart';
+import 'package:ucris_oyscatech/db/auth_controller/authcontroller.dart';
 
 import 'package:ucris_oyscatech/widget/title_text.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -67,14 +68,17 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
+  final authController = Get.put(AuthController());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         actions: [
           TextButton(
-            onPressed: () {
-              // Handle logout if necessary
+            onPressed: () async {
+              await authController.logout();
             },
             child: const Text(
               'Logout',
@@ -196,7 +200,7 @@ class _AdminPageState extends State<AdminPage> {
                         hintText: '$selectedCategory Title '),
                     onChanged: (value) {
                       setState(() {
-                        description = value;
+                        title = value;
                       });
                     },
                     validator: (value) => value!.isEmpty
@@ -240,7 +244,7 @@ class _AdminPageState extends State<AdminPage> {
                         labelText: '$selectedCategory Author '),
                     onChanged: (value) {
                       setState(() {
-                        description = value;
+                        authors = value;
                       });
                     },
                     validator: (value) =>
@@ -259,7 +263,7 @@ class _AdminPageState extends State<AdminPage> {
                         labelText: '$selectedCategory Year '),
                     onChanged: (value) {
                       setState(() {
-                        description = value;
+                        year = value;
                       });
                     },
                     validator: (value) =>
@@ -318,15 +322,27 @@ class _AdminPageState extends State<AdminPage> {
         final downloadUrl = await uploadTask.ref.getDownloadURL();
 
         // Save file data to Firestore
-        await FirebaseFirestore.instance.collection('course_materials').add({
-          'level': selectedLevel,
-          'course': selectedCourse,
-          'type': selectedCategory,
-          'description': description,
-          'fileName': fileName,
-          'downloadUrl': downloadUrl,
-          'timestamp': Timestamp.now(),
-        });
+        selectedCategory == 'Journals' || selectedCategory == 'Project/Thesis'
+            ? await FirebaseFirestore.instance.collection('resources').add({
+                'type': selectedCategory,
+                'year': year,
+                'title': title,
+                'authors': authors,
+                'fileName': fileName,
+                'downloadUrl': downloadUrl,
+                'timestamp': Timestamp.now(),
+              })
+            : await FirebaseFirestore.instance
+                .collection('course_materials')
+                .add({
+                'level': selectedLevel,
+                'course': selectedCourse,
+                'type': selectedCategory,
+                'description': description,
+                'fileName': fileName,
+                'downloadUrl': downloadUrl,
+                'timestamp': Timestamp.now(),
+              });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$selectedCategory added successfully')),
@@ -353,7 +369,9 @@ class _AdminPageState extends State<AdminPage> {
   Widget _displayFilesBasedOnCategory(String category) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('course_materials')
+          .collection(category == 'Journals' || category == 'Journals'
+              ? 'resources'
+              : 'course_materials')
           .where('type', isEqualTo: category)
           .snapshots(),
       builder: (context, snapshot) {
@@ -389,72 +407,143 @@ class _AdminPageState extends State<AdminPage> {
                     const SizedBox(
                       height: 20,
                     ),
-                    DataTable(
-                      columns: const [
-                        DataColumn(label: Text('S/N')),
-                        DataColumn(label: Text('Course Code')),
-                        DataColumn(label: Text('Course Title')),
-                        DataColumn(label: Text('Level')),
-                        DataColumn(label: Text('Download File')),
-                        DataColumn(label: Text('Action')), // New Action Column
-                      ],
-                      rows: files.asMap().entries.map((entry) {
-                        int index = entry.key + 1;
-                        var file = entry.value;
-                        String courseCode = file['course'] ?? 'N/A';
-                        String level = file['level'] ?? 'N/A';
-
-                        // Fetch the course title using the course code and level
-                        String courseTitle = getCourseTitle(level, courseCode);
-
-                        return DataRow(cells: [
-                          DataCell(Text('$index')), // Serial Number
-                          DataCell(Text(courseCode)),
-                          DataCell(Text(courseTitle)),
-                          DataCell(Text(level)),
-                          DataCell(IconButton(
-                            icon: const Icon(
-                              Icons.download,
-                              color: appColor,
-                            ),
-                            onPressed: () async {
-                              final url = file['downloadUrl'];
-                              if (url != null && await canLaunch(url)) {
-                                await launch(url);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Could not open the file')),
-                                );
-                              }
-                            },
-                          )),
-                          DataCell(Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () {
-                                  _editFile(
-                                      file.id, file); // Trigger edit action
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  _deleteFile(file.id, file);
-                                },
-                              ),
+                    category == 'Journals' || category == 'Project/Thesis'
+                        ? DataTable(
+                            columns: const [
+                              DataColumn(label: Text('S/N')),
+                              DataColumn(label: Text('Year')),
+                              DataColumn(label: Text('Author(s)')),
+                              DataColumn(label: Text('Title')),
+                              DataColumn(label: Text('Download File')),
+                              DataColumn(
+                                  label: Text('Action')), // New Action Column
                             ],
-                          )),
-                        ]);
-                      }).toList(),
-                    ),
+                            rows: files.asMap().entries.map((entry) {
+                              int index = entry.key + 1;
+                              var file = entry.value;
+
+                              // Fetch the course title using the course code and level
+
+                              return DataRow(cells: [
+                                DataCell(Text('$index')), // Serial Number
+                                DataCell(Text(file['year'])),
+                                DataCell(Text(file['authors'])),
+                                DataCell(Text(file['title'])),
+                                DataCell(IconButton(
+                                  icon: const Icon(
+                                    Icons.download,
+                                    color: appColor,
+                                  ),
+                                  onPressed: () async {
+                                    final url = file['downloadUrl'];
+                                    if (url != null && await canLaunch(url)) {
+                                      await launch(url);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Could not open the file')),
+                                      );
+                                    }
+                                  },
+                                )),
+                                DataCell(Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.green,
+                                      ),
+                                      onPressed: () {
+                                        _editFile(file.id,
+                                            file); // Trigger edit action
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () {
+                                        _deleteFile(file.id, file);
+                                      },
+                                    ),
+                                  ],
+                                )),
+                              ]);
+                            }).toList(),
+                          )
+                        : DataTable(
+                            columns: const [
+                              DataColumn(label: Text('S/N')),
+                              DataColumn(label: Text('Course Code')),
+                              DataColumn(label: Text('Course Title')),
+                              DataColumn(label: Text('Level')),
+                              DataColumn(label: Text('Download File')),
+                              DataColumn(
+                                  label: Text('Action')), // New Action Column
+                            ],
+                            rows: files.asMap().entries.map((entry) {
+                              int index = entry.key + 1;
+                              var file = entry.value;
+                              String courseCode = file['course'] ?? 'N/A';
+                              String level = file['level'] ?? 'N/A';
+
+                              // Fetch the course title using the course code and level
+                              String courseTitle =
+                                  getCourseTitle(level, courseCode);
+
+                              return DataRow(cells: [
+                                DataCell(Text('$index')), // Serial Number
+                                DataCell(Text(courseCode)),
+                                DataCell(Text(courseTitle)),
+                                DataCell(Text(level)),
+                                DataCell(IconButton(
+                                  icon: const Icon(
+                                    Icons.download,
+                                    color: appColor,
+                                  ),
+                                  onPressed: () async {
+                                    final url = file['downloadUrl'];
+                                    if (url != null && await canLaunch(url)) {
+                                      await launch(url);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Could not open the file')),
+                                      );
+                                    }
+                                  },
+                                )),
+                                DataCell(Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.green,
+                                      ),
+                                      onPressed: () {
+                                        _editFile(file.id,
+                                            file); // Trigger edit action
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () {
+                                        _deleteFile(file.id, file);
+                                      },
+                                    ),
+                                  ],
+                                )),
+                              ]);
+                            }).toList(),
+                          ),
                   ],
                 ),
               )),
@@ -559,6 +648,7 @@ class _AdminPageState extends State<AdminPage> {
                         const SnackBar(
                             content: Text('File updated successfully')),
                       );
+                      Navigator.pop(context);
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Failed to update file: $e')),
@@ -604,18 +694,26 @@ class _AdminPageState extends State<AdminPage> {
               ElevatedButton(
                   onPressed: () {
                     Get.back();
-                    _showCheckBalanceDialog();
                   },
                   child: const Text("Cancel")),
               ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: appColor),
                   onPressed: () async {
-                    await FirebaseFirestore.instance
-                        .collection("course_materials")
-                        .doc(id)
-                        .delete();
-                    _showCheckBalanceDialog();
-                    Get.back();
+                    try {
+                      _showCheckBalanceDialog();
+                      await FirebaseFirestore.instance
+                          .collection("course_materials")
+                          .doc(id)
+                          .delete();
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Deleted successfully')));
+                    } catch (e) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text('Failed: $e')));
+                    } finally {
+                      Navigator.pop(context);
+                    }
                   },
                   child: Text(
                     "Delete",

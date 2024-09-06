@@ -12,4 +12,5 @@ TextStyle textStyle(
     color: color,
   ));
 }
-const Color appColor= Color.fromRGBO(3, 73, 44, 1);
+
+const Color appColor = Color.fromRGBO(3, 73, 44, 1);

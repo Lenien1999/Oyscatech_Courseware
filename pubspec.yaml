@@ -47,6 +47,7 @@ dependencies:
   file_picker:
   firebase_storage:
   url_launcher:
+  flutter_pdfview:
 
 dev_dependencies:
   flutter_test:
