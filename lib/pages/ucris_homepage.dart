@@ -331,7 +331,7 @@ class UcrisHomepage extends StatelessWidget {
     final isLargeOrMedium = ResponsiveWidget.isLargeScreen(context) ||
         ResponsiveWidget.isMediumScreen(context);
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(color: Colors.white, boxShadow: [
         BoxShadow(
           color: const Color.fromARGB(255, 221, 218, 218).withOpacity(0.5),

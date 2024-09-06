@@ -16,7 +16,7 @@ class AuthController extends GetxController {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       Get.to(() =>
-            AdminPage()); // Navigate to AuthScreen after successful sign-in
+            const AdminPage()); // Navigate to AuthScreen after successful sign-in
     } on FirebaseAuthException catch (e) {
       // Handle Firebase-specific exceptions
       Get.snackbar("Error", e.message ?? "An error occurred",

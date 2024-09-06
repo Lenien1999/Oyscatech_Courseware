@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart'; // Added for launching the URL
@@ -10,11 +12,11 @@ class CourseDetails extends StatelessWidget {
   final String courseUnit;
 
   const CourseDetails({
-    Key? key,
+    super.key,
     required this.courseCode,
     required this.courseTitle,
     required this.courseUnit,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

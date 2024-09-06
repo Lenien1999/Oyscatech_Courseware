@@ -4,7 +4,7 @@ import 'package:loading_indicator/loading_indicator.dart';
 class WaitingToLoginDialog extends StatelessWidget {
   final String title;
 
-  const WaitingToLoginDialog({Key? key, required this.title}) : super(key: key);
+  const WaitingToLoginDialog({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {

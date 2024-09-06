@@ -5,7 +5,7 @@ class CheckNowButton extends StatelessWidget {
   final bool isPressed;
   final String title;
   final VoidCallback tap;
-  CheckNowButton(
+  const CheckNowButton(
       {super.key,
       required this.isPressed,
       required this.tap,

@@ -107,7 +107,7 @@ class MenuItem extends StatelessWidget {
       padding: const EdgeInsets.all(10.0),
       child: TextButton(
           style: ButtonStyle(
-              padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
+              padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
             EdgeInsets.zero, // Set the padding to zero
           )),
           onPressed: onpress,

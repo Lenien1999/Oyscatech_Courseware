@@ -9,8 +9,8 @@ import '../widget/textformfield.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
