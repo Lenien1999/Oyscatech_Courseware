@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ucris_oyscatech/components/controller.dart';
 import 'package:ucris_oyscatech/components/faqtile.dart';
 import 'package:ucris_oyscatech/constant/responsive.dart';
 import 'package:ucris_oyscatech/constant/style.dart';
@@ -196,19 +197,43 @@ class UcrisHomepage extends StatelessWidget {
           ? Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _levelCourseParameers(level: 'ND 1', press: () {}),
+                _levelCourseParameers(
+                    level: 'ND 1',
+                    press: () {
+                      controller.animateToPage(1,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeIn);
+                    }),
                 const SizedBox(
                   width: 30,
                 ),
-                _levelCourseParameers(level: 'ND 2', press: () {}),
+                _levelCourseParameers(
+                    level: 'ND 2',
+                    press: () {
+                      controller.animateToPage(1,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeIn);
+                    }),
                 const SizedBox(
                   width: 10,
                 ),
-                _levelCourseParameers(level: 'HND 1', press: () {}),
+                _levelCourseParameers(
+                    level: 'HND 1',
+                    press: () {
+                      controller.animateToPage(1,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeIn);
+                    }),
                 const SizedBox(
                   width: 10,
                 ),
-                _levelCourseParameers(level: 'HND 2', press: () {}),
+                _levelCourseParameers(
+                    level: 'HND 2',
+                    press: () {
+                      controller.animateToPage(1,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeIn);
+                    }),
               ],
             )
           : Column(
